@@ -4,8 +4,7 @@ import { FlatList, Image, StyleSheet, View, Dimensions, TouchableOpacity, Text, 
 import * as service from '../network/service';
 import QuestionComponent from './QuestionComponent';
 import MCQComponent from './MCQComponent';
-
-
+import { Platform } from 'react-native';
 
 const Home = () => {
     const [images, setImages] = useState([require("../images/bg1.png"), require("../images/bg2.png")]); // Static images
@@ -13,7 +12,7 @@ const Home = () => {
     const [selectedButton, setSelectedButton] = useState(0);
     const [followingResponse, setFollowingResponse] = useState(null);
     const [forYouResponse, setForYouResponse] = useState(null);
-    const screenHeight = Dimensions.get('window').height - 80;
+    const screenHeight = Platform.OS === 'ios' ? Dimensions.get('window').height - 80 : Dimensions.get('window').height - 104;
 
     const addImage = () => {
         const newImage = images.length % 2 === 0 ? require("../images/bg1.png") : require('../images/bg2.png'); // Interchange images
@@ -278,7 +277,7 @@ const styles = StyleSheet.create({
     nameText: {
         color: 'white',
         fontSize: 15,
-        fontWeight: 600,
+        fontWeight: '600',
         textAlign: 'left',
     },
     descText: {

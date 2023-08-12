@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   question: {
     fontSize: 22,
     marginBottom: 100,
-    fontWeight: 500,
+    fontWeight: '500',
     color: 'white',
     backgroundColor: 'black',
     borderRadius: 8,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   optionText: {
     color: 'white',
     fontSize: 17,
-    fontWeight: 600,
+    fontWeight: '600',
   },
 });
 
