@@ -3,33 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Image, StyleSheet, View, Dimensions, TouchableOpacity, Text, SafeAreaView } from 'react-native';
 import * as service from '../network/service';
 import QuestionComponent from './QuestionComponent';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MCQComponent from './MCQComponent';
 
 
 
 const Home = () => {
     const [images, setImages] = useState([require("../images/bg1.png"), require("../images/bg2.png")]); // Static images
+    const [dynamicImages, setDynamicImages] = useState([]);
     const [selectedButton, setSelectedButton] = useState(0);
-    const [text, setQuestionText] = useState('');
     const [followingResponse, setFollowingResponse] = useState(null);
     const [forYouResponse, setForYouResponse] = useState(null);
     const screenHeight = Dimensions.get('window').height - 80;
-    const insets = useSafeAreaInsets();
 
     const addImage = () => {
         const newImage = images.length % 2 === 0 ? require("../images/bg1.png") : require('../images/bg2.png'); // Interchange images
         setImages(prevImages => [...prevImages, newImage]);
     };
 
-    const fetchData = async () => {
-        try {
-            // Replace with your API endpoint
-            const response = await axios.get('https://example.com/api/getImageUrl');
-            const newImageUrl = response.data.imageUrl; // Adjust based on the API response structure
-            setImages(prevImages => [...prevImages, newImageUrl]);
-        } catch (error) {
-            console.error(error);
-        }
+    const addDynamicImage = (newImage) => {
+        setDynamicImages(prevImages => [...prevImages, newImage]);
     };
 
     const [timer, setTimer] = useState(0);
@@ -43,20 +35,23 @@ const Home = () => {
     }, []);
 
     useEffect(() => {
+        fetchData()
+    }, [selectedButton, images]);
+
+    const fetchData = () => {
         selectedButton === 0 ?
             service.getFollowing()
                 .then(response => {
                     setFollowingResponse(response)
-                    setQuestionText(response.flashcard_front)
                 })
                 .catch(error => console.error(error)) :
             service.getForYou()
                 .then(response => {
                     setForYouResponse(response)
+                    addDynamicImage(response.image)
                 })
                 .catch(error => console.error(error));
-    }, [selectedButton]);
-
+    }
 
     const formatTime = (seconds) => {
         if (seconds < 60) return `${seconds}s`;
@@ -64,11 +59,47 @@ const Home = () => {
         return `${Math.floor(seconds / 3600)}h`;
     };
 
-
-    const handleQuestionPress = () => {
-        setQuestionText(text === followingResponse.flashcard_back ? followingResponse.flashcard_front : followingResponse.flashcard_back);
+    const getDescription = () => {
+        if (selectedButton === 0) {
+            if (followingResponse === null)
+                return '';
+            else
+                return followingResponse.description;
+        } else {
+            if (forYouResponse === null)
+                return '';
+            else
+                return forYouResponse.description;
+        }
     };
 
+    const getName = () => {
+        if (selectedButton === 0) {
+            if (followingResponse === null)
+                return '';
+            else
+                return followingResponse.user.name;
+        } else {
+            if (forYouResponse === null)
+                return '';
+            else
+                return forYouResponse.user.name;
+        }
+    };
+
+    const getPlaylistName = () => {
+        if (selectedButton === 0) {
+            if (followingResponse === null)
+                return '';
+            else
+                return followingResponse.playlist;
+        } else {
+            if (forYouResponse === null)
+                return '';
+            else
+                return forYouResponse.playlist;
+        }
+    };
     return (
         <View style={styles.outer}>
             <SafeAreaView style={styles.fullScreenOverlay}>
@@ -90,16 +121,22 @@ const Home = () => {
                 </View>
             </SafeAreaView>
             <FlatList
-                data={images}
+                data={selectedButton === 0 ? images : dynamicImages}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                     <View style={{ ...styles.container, height: screenHeight }}>
                         <Image
-                            source={item}
+                            source={selectedButton === 0 ? item : forYouResponse === null ? '' : { uri: item }}
                             style={{ ...styles.image, height: screenHeight }}
                         />
-                        <QuestionComponent response={followingResponse} />
+                        {selectedButton === 0 ? <QuestionComponent response={followingResponse} /> :
+                            <MCQComponent questionData={forYouResponse} />}
+
                         <Image source={selectedButton === 0 ? require('../images/action_bar2.png') : require('../images/action_bar.png')} style={styles.icon} />
+                        <View style={styles.nameContainer}>
+                            <Text style={styles.nameText}>{getName()}</Text>
+                            <Text style={styles.descText}>{getDescription()}</Text>
+                        </View>
                         <View style={styles.playlistContainer}>
                             <Image source={require('../images/arrow.png')} style={styles.playlistRightImage} />
                             <View style={styles.playlistTextContainer}>
@@ -107,7 +144,7 @@ const Home = () => {
                                     source={require('../images/video.png')}
                                     style={styles.playlistLeftImage}
                                 />
-                                <Text style={styles.playlistText}>Playlist · Unit 5: {followingResponse === null ? "" : followingResponse.playlist}</Text>
+                                <Text style={styles.playlistText}>Playlist · Unit 5: {getPlaylistName()}</Text>
                             </View>
                         </View>
                     </View>
@@ -115,7 +152,7 @@ const Home = () => {
                 pagingEnabled
                 vertical
                 showsVerticalScrollIndicator={false}
-                onEndReached={addImage} // Call the API again when user scrolls to the end
+                onEndReached={selectedButton === 0 ? addImage : fetchData} // Call the API again when user scrolls to the end
                 onEndReachedThreshold={0} // Adjust this value based on when you want to trigger the API call
             />
         </View>
@@ -237,10 +274,31 @@ const styles = StyleSheet.create({
         fontSize: 12,
         padding: 10,
     },
+
+    nameText: {
+        color: 'white',
+        fontSize: 15,
+        fontWeight: 600,
+        textAlign: 'left',
+    },
+    descText: {
+        color: 'white',
+        fontSize: 12,
+        textAlign: 'left',
+    },
     playlistContainer: {
         position: 'absolute',
-        bottom: 0, // Aligns view to the bottom of the container
-        backgroundColor: 'black', // Just for visualization
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'black',
+    },
+
+    nameContainer: {
+        width: '100%',
+        padding: 8,
+        position: 'absolute',
+        bottom: 50,
     },
 
 });

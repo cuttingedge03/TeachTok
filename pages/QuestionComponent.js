@@ -17,7 +17,7 @@ const QuestionComponent = ({ response }) => {
       {showText && <View>
         <View style={styles.underline} />
         <Text style={styles.greenText}>Answer</Text>
-        <Text style={styles.text}>{response === null ? '' : response.flashcard_back}</Text>
+        <Text numberOfLines={12} ellipsizeMode="tail" style={styles.text}>{response === null ? '' : response.flashcard_back}</Text>
 
         <Text style={styles.wellText}>How well did you know this?</Text>
         <View style={styles.rowContainer}>
