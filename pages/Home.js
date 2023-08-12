@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Image, StyleSheet, View, Dimensions, TouchableOpacity, Text, SafeAreaView } from 'react-native';
 import * as service from '../network/service';
 import QuestionComponent from './QuestionComponent';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+
 
 const Home = () => {
     const [images, setImages] = useState([require("../images/bg1.png"), require("../images/bg2.png")]); // Static images
@@ -10,7 +13,8 @@ const Home = () => {
     const [text, setQuestionText] = useState('');
     const [followingResponse, setFollowingResponse] = useState(null);
     const [forYouResponse, setForYouResponse] = useState(null);
-    const screenHeight = Dimensions.get('window').height - 50;
+    const screenHeight = Dimensions.get('window').height - 80;
+    const insets = useSafeAreaInsets();
 
     const addImage = () => {
         const newImage = images.length % 2 === 0 ? require("../images/bg1.png") : require('../images/bg2.png'); // Interchange images
@@ -40,17 +44,17 @@ const Home = () => {
 
     useEffect(() => {
         selectedButton === 0 ?
-        service.getFollowing()
-            .then(response => {
-                setFollowingResponse(response)
-                setQuestionText(response.flashcard_front)
-            })
-            .catch(error => console.error(error)) : 
+            service.getFollowing()
+                .then(response => {
+                    setFollowingResponse(response)
+                    setQuestionText(response.flashcard_front)
+                })
+                .catch(error => console.error(error)) :
             service.getForYou()
-            .then(response => {
-                setForYouResponse(response)
-            })
-            .catch(error => console.error(error));
+                .then(response => {
+                    setForYouResponse(response)
+                })
+                .catch(error => console.error(error));
     }, [selectedButton]);
 
 
@@ -67,28 +71,44 @@ const Home = () => {
 
     return (
         <View style={styles.outer}>
-        
-        <FlatList
+            <SafeAreaView style={styles.fullScreenOverlay}>
+                <View >
+                    <Image source={require('../images/search.png')} style={styles.topRightIcon} />
+
+                    <View style={styles.timerContainer}>
+                        <Image source={require('../images/timer.png')} style={styles.topleftIcon} />
+                        <Text style={styles.timerText}>{formatTime(timer)}</Text>
+                    </View>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity onPress={() => setSelectedButton(0)} style={selectedButton === 0 ? styles.selectedButton : styles.button}>
+                            <Text style={selectedButton === 0 ? styles.selectedButtonText : styles.buttonText}>Following</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setSelectedButton(1)} style={selectedButton === 1 ? styles.selectedButton : styles.button}>
+                            <Text style={selectedButton === 1 ? styles.selectedButtonText : styles.buttonText}>For You</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </SafeAreaView>
+            <FlatList
                 data={images}
-                contentContainerStyle={{ flexGrow: 1 }}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
-                    <View style={styles.container}>
+                    <View style={{ ...styles.container, height: screenHeight }}>
                         <Image
                             source={item}
-                            style={styles.image}
+                            style={{ ...styles.image, height: screenHeight }}
                         />
-                        <QuestionComponent response = {followingResponse} />
+                        <QuestionComponent response={followingResponse} />
                         <Image source={selectedButton === 0 ? require('../images/action_bar2.png') : require('../images/action_bar.png')} style={styles.icon} />
                         <View style={styles.playlistContainer}>
-                        <Image source={require('../images/arrow.png')} style={styles.playlistRightImage} />
-                        <View style={styles.playlistTextContainer}>
-                            <Image
-                                source={require('../images/video.png')}
-                                style={styles.playlistLeftImage}
-                            />
-                            <Text style={styles.playlistText}>Playlist · Unit 5: {followingResponse === null ? "" : followingResponse.playlist}</Text>
-                        </View>
+                            <Image source={require('../images/arrow.png')} style={styles.playlistRightImage} />
+                            <View style={styles.playlistTextContainer}>
+                                <Image
+                                    source={require('../images/video.png')}
+                                    style={styles.playlistLeftImage}
+                                />
+                                <Text style={styles.playlistText}>Playlist · Unit 5: {followingResponse === null ? "" : followingResponse.playlist}</Text>
+                            </View>
                         </View>
                     </View>
                 )}
@@ -108,7 +128,6 @@ const styles = StyleSheet.create({
     },
     container: {
         width: '100%',
-        height: '100%', // Full screen height
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -116,7 +135,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: '100%',
         height: '20%',
-      },
+        zIndex: 1,
+    },
     image: {
         width: '100%',
         height: '100%',
@@ -139,9 +159,11 @@ const styles = StyleSheet.create({
         right: -15,
         resizeMode: 'contain',
     },
-    topRightIcon: {        
+    topRightIcon: {
+        position: 'absolute',
         width: 16,
         height: 16,
+        top: 24,
         right: 20,
         zIndex: 1,
     },
@@ -207,21 +229,19 @@ const styles = StyleSheet.create({
         height: 16,
         position: 'absolute',
         right: 10,
-        zIndex:1,
+        zIndex: 1,
         top: 10,
     },
     playlistText: {
         color: 'white',
-        padding: 10,
         fontSize: 12,
+        padding: 10,
     },
     playlistContainer: {
         position: 'absolute',
-        bottom: 50, // Aligns view to the bottom of the container
-        left: 0,
-        right: 0,
+        bottom: 0, // Aligns view to the bottom of the container
         backgroundColor: 'black', // Just for visualization
-      },
+    },
 
 });
 
