@@ -5,18 +5,18 @@ import * as service from '../network/service';
 import QuestionComponent from './QuestionComponent';
 import MCQComponent from './MCQComponent';
 import { Platform } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 const Home = () => {
-    const [images, setImages] = useState([require("../images/bg1.png"), require("../images/bg2.png")]); // Static images
+    const [pages, setPages] = useState([0]);
     const [dynamicImages, setDynamicImages] = useState([]);
     const [selectedButton, setSelectedButton] = useState(0);
     const [followingResponse, setFollowingResponse] = useState(null);
     const [forYouResponse, setForYouResponse] = useState(null);
     const screenHeight = Platform.OS === 'ios' ? Dimensions.get('window').height - 80 : Dimensions.get('window').height - 104;
 
-    const addImage = () => {
-        const newImage = images.length % 2 === 0 ? require("../images/bg1.png") : require('../images/bg2.png'); // Interchange images
-        setImages(prevImages => [...prevImages, newImage]);
+    const addPage = () => {
+        setPages(prev => [...prev, 1]);
     };
 
     const addDynamicImage = (newImage) => {
@@ -35,7 +35,7 @@ const Home = () => {
 
     useEffect(() => {
         fetchData()
-    }, [selectedButton, images]);
+    }, [selectedButton, pages]);
 
     const fetchData = () => {
         selectedButton === 0 ?
@@ -48,6 +48,16 @@ const Home = () => {
                 .then(response => {
                     setForYouResponse(response)
                     addDynamicImage(response.image)
+
+                    console.log("length is " + dynamicImages.length)
+                    if(dynamicImages.length === 0){
+                        console.log("fetched again");
+                        service.getForYou()
+                        .then(response => {
+                            addDynamicImage(response.image)
+                        })
+                        .catch(error => console.error(error));
+                    }   
                 })
                 .catch(error => console.error(error));
     }
@@ -120,39 +130,46 @@ const Home = () => {
                 </View>
             </SafeAreaView>
             <FlatList
-                data={selectedButton === 0 ? images : dynamicImages}
+                data={selectedButton === 0 ? pages : dynamicImages}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
-                    <View style={{ ...styles.container, height: screenHeight }}>
-                        <Image
-                            source={selectedButton === 0 ? item : forYouResponse === null ? '' : { uri: item }}
-                            style={{ ...styles.image, height: screenHeight }}
-                        />
-                        {selectedButton === 0 ? <QuestionComponent response={followingResponse} /> :
-                            <MCQComponent questionData={forYouResponse} />}
+                    <LinearGradient
+                        colors={['#001D28', '#00425A']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={styles.container}
+                    >
+                        <View style={{ ...styles.container, height: screenHeight }}>
+                            {selectedButton === 1 && <Image
+                                source={forYouResponse === null ? '' : { uri: item }}
+                                style={{ ...styles.image, height: screenHeight }}
+                            />}
+                            {selectedButton === 0 ? <QuestionComponent response={followingResponse} /> :
+                                forYouResponse !== null && <MCQComponent questionData={forYouResponse} />}
 
-                        <Image source={selectedButton === 0 ? require('../images/action_bar2.png') : require('../images/action_bar.png')} style={styles.icon} />
-                        <View style={styles.nameContainer}>
-                            <Text style={styles.nameText}>{getName()}</Text>
-                            <Text style={styles.descText}>{getDescription()}</Text>
-                        </View>
-                        <View style={styles.playlistContainer}>
-                            <Image source={require('../images/arrow.png')} style={styles.playlistRightImage} />
-                            <View style={styles.playlistTextContainer}>
-                                <Image
-                                    source={require('../images/video.png')}
-                                    style={styles.playlistLeftImage}
-                                />
-                                <Text style={styles.playlistText}>Playlist · Unit 5: {getPlaylistName()}</Text>
+                            <Image source={selectedButton === 0 ? require('../images/action_bar2.png') : require('../images/action_bar.png')} style={styles.icon} />
+                            <View style={styles.nameContainer}>
+                                <Text style={styles.nameText}>{getName()}</Text>
+                                <Text style={styles.descText}>{getDescription()}</Text>
+                            </View>
+                            <View style={styles.playlistContainer}>
+                                <Image source={require('../images/arrow.png')} style={styles.playlistRightImage} />
+                                <View style={styles.playlistTextContainer}>
+                                    <Image
+                                        source={require('../images/video.png')}
+                                        style={styles.playlistLeftImage}
+                                    />
+                                    <Text style={styles.playlistText}>Playlist · Unit 5: {getPlaylistName()}</Text>
+                                </View>
                             </View>
                         </View>
-                    </View>
+                    </LinearGradient>
                 )}
                 pagingEnabled
                 vertical
                 showsVerticalScrollIndicator={false}
-                onEndReached={selectedButton === 0 ? addImage : fetchData} // Call the API again when user scrolls to the end
-                onEndReachedThreshold={0} // Adjust this value based on when you want to trigger the API call
+                onEndReached={selectedButton === 0 ? addPage : fetchData} // Call the API again when user scrolls to the end
+                onEndReachedThreshold={0.1} // Adjust this value based on when you want to trigger the API call
             />
         </View>
     );
@@ -290,7 +307,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'black',
+        backgroundColor: '#161616',
     },
 
     nameContainer: {

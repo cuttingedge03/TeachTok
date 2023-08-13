@@ -21,13 +21,13 @@ const Tab = createBottomTabNavigator();
 function App() {
   return (
     <NavigationContainer>
-    <Tab.Navigator screenOptions={{headerShown: false, tabBarStyle: {height: 80}}}>
+    <Tab.Navigator screenOptions={{headerShown: false, tabBarStyle: {height: 80, backgroundColor: 'black', borderColor: 'black'}, tabBarActiveTintColor: 'white', tabBarInactiveTintColor: 'gray'}} >
       <Tab.Screen 
         name="Home" 
         component={Home} 
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color='white', size }) => (
             <Image 
               source={require('./images/home.png')} 
               style={{ width: size, height: size, tintColor: color }}
