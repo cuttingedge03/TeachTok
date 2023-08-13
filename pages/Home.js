@@ -9,6 +9,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 const Home = () => {
     const [pages, setPages] = useState([0]);
+    const [dynamicPages, setDynamicPages] = useState([0]);
     const [dynamicImages, setDynamicImages] = useState([]);
     const [selectedButton, setSelectedButton] = useState(0);
     const [followingResponse, setFollowingResponse] = useState(null);
@@ -17,6 +18,10 @@ const Home = () => {
 
     const addPage = () => {
         setPages(prev => [...prev, 1]);
+    };
+
+    const addDynamicPage = () => {
+        setDynamicPages(prev => [...prev, 1]);
     };
 
     const addDynamicImage = (newImage) => {
@@ -35,7 +40,7 @@ const Home = () => {
 
     useEffect(() => {
         fetchData()
-    }, [selectedButton, pages]);
+    }, [selectedButton, pages, dynamicPages]);
 
     const fetchData = () => {
         selectedButton === 0 ?
@@ -48,16 +53,6 @@ const Home = () => {
                 .then(response => {
                     setForYouResponse(response)
                     addDynamicImage(response.image)
-
-                    console.log("length is " + dynamicImages.length)
-                    if(dynamicImages.length === 0){
-                        console.log("fetched again");
-                        service.getForYou()
-                        .then(response => {
-                            addDynamicImage(response.image)
-                        })
-                        .catch(error => console.error(error));
-                    }   
                 })
                 .catch(error => console.error(error));
     }
@@ -130,9 +125,9 @@ const Home = () => {
                 </View>
             </SafeAreaView>
             <FlatList
-                data={selectedButton === 0 ? pages : dynamicImages}
+                data={selectedButton === 0 ? pages : dynamicPages}
                 keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
+                renderItem={({ item, index }) => (
                     <LinearGradient
                         colors={['#001D28', '#00425A']}
                         start={{ x: 0.5, y: 0 }}
@@ -140,8 +135,8 @@ const Home = () => {
                         style={styles.container}
                     >
                         <View style={{ ...styles.container, height: screenHeight }}>
-                            {selectedButton === 1 && <Image
-                                source={forYouResponse === null ? '' : { uri: item }}
+                            {selectedButton === 1 && forYouResponse != null && <Image
+                                source={{ uri: dynamicImages[index] }}
                                 style={{ ...styles.image, height: screenHeight }}
                             />}
                             {selectedButton === 0 ? <QuestionComponent response={followingResponse} /> :
@@ -168,7 +163,7 @@ const Home = () => {
                 pagingEnabled
                 vertical
                 showsVerticalScrollIndicator={false}
-                onEndReached={selectedButton === 0 ? addPage : fetchData} // Call the API again when user scrolls to the end
+                onEndReached={selectedButton === 0 ? addPage : addDynamicPage} // Call the API again when user scrolls to the end
                 onEndReachedThreshold={0.1} // Adjust this value based on when you want to trigger the API call
             />
         </View>
